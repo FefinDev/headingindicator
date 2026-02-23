@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Heading Indicator</title>
+<script src="https://cdn.tailwindcss.com"></script>
+
+<style>
+body {
+    background: radial-gradient(circle at center, #020617 0%, #000000 100%);
+}
+
+.compass-ring {
+    position: absolute;
+    inset: 0;
+    border-radius: 9999px;
+    border: 2px solid rgba(56,189,248,0.5);
+    box-shadow: 0 0 40px rgba(56,189,248,0.25) inset;
+}
+
+.cardinal {
+    position: absolute;
+    color: #7dd3fc;
+    font-weight: 600;
+    transform: translate(-50%, -50%);
+    letter-spacing: 1px;
+}
+
+/* contenedor rotatorio */
+.arrow-rot {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.5s cubic-bezier(.22,.61,.36,1);
+}
+
+/* flecha centrada geométricamente */
+.arrow {
+    position: relative;
+    width: 0;
+    height: 0;
+}
+
+.arrow::before {
+    content: "";
+    position: absolute;
+    left: 50%;
+    bottom: 0;
+    transform: translateX(-50%);
+    border-left: 14px solid transparent;
+    border-right: 14px solid transparent;
+    border-bottom: 140px solid #38bdf8;
+    filter: drop-shadow(0 0 12px #38bdf8);
+}
+
+.arrow::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 0;
+    transform: translateX(-50%);
+    border-left: 8px solid transparent;
+    border-right: 8px solid transparent;
+    border-top: 40px solid rgba(56,189,248,0.7);
+}
+
+.center-dot {
+    width: 12px;
+    height: 12px;
+    background: #38bdf8;
+    border-radius: 50%;
+    box-shadow: 0 0 14px #38bdf8;
+}
+</style>
+</head>
+
+<body class="text-sky-200 flex flex-col items-center p-6">
+
+<h1 class="text-2xl font-semibold mb-4">Heading Indicator</h1>
+
+<div class="flex gap-6 mb-6 items-end">
+<div>
+<label class="text-sm">Heading</label>
+<input id="headingInput" type="number" value="290"
+class="bg-slate-900 border border-sky-700 rounded px-3 py-1 w-24">
+</div>
+
+<div class="flex items-center gap-2">
+<label class="text-sm">Rumbo inverso</label>
+<input id="reciprocalCheck" type="checkbox">
+</div>
+</div>
+
+<div id="compass" class="relative w-[320px] h-[320px]">
+
+<div class="compass-ring"></div>
+
+<div id="labels"></div>
+
+<!-- ROTACIÓN CENTRADA -->
+<div id="arrowRot" class="arrow-rot">
+    <div class="arrow"></div>
+</div>
+
+<div class="absolute inset-0 flex items-center justify-center">
+<div class="center-dot"></div>
+</div>
+
+</div>
+
+<div id="readout" class="mt-4 text-lg tracking-wider"></div>
+
+<script>
+const compass = document.getElementById("compass");
+const headingInput = document.getElementById("headingInput");
+const reciprocalCheck = document.getElementById("reciprocalCheck");
+const arrowRot = document.getElementById("arrowRot");
+const readout = document.getElementById("readout");
+
+function normalize(deg){
+    return (deg%360+360)%360;
+}
+
+const cardinals=[
+{deg:0, txt:"N"},
+{deg:90, txt:"E"},
+{deg:180, txt:"S"},
+{deg:270, txt:"O"}
+];
+
+const labels=document.getElementById("labels");
+
+cardinals.forEach(c=>{
+    const el=document.createElement("div");
+    el.className="cardinal";
+    const r=135;
+    const rad=(c.deg-90)*Math.PI/180;
+    el.style.left=160+r*Math.cos(rad)+"px";
+    el.style.top =160+r*Math.sin(rad)+"px";
+    el.textContent=c.txt;
+    labels.appendChild(el);
+});
+
+function update(){
+    let heading=parseFloat(headingInput.value)||0;
+    if(reciprocalCheck.checked) heading+=180;
+    heading=normalize(heading);
+
+    arrowRot.style.transform=`rotate(${heading}deg)`;
+    readout.textContent=`Heading: ${Math.round(heading)}°`;
+}
+
+headingInput.addEventListener("input",update);
+reciprocalCheck.addEventListener("change",update);
+
+let dragging=false;
+
+compass.addEventListener("pointerdown",()=>dragging=true);
+window.addEventListener("pointerup",()=>dragging=false);
+
+window.addEventListener("pointermove",e=>{
+    if(!dragging) return;
+    const rect=compass.getBoundingClientRect();
+    const cx=rect.left+rect.width/2;
+    const cy=rect.top+rect.height/2;
+    const dx=e.clientX-cx;
+    const dy=e.clientY-cy;
+    let ang=Math.atan2(dy,dx)*180/Math.PI+90;
+    headingInput.value=normalize(ang);
+    update();
+});
+
+update();
+</script>
+
+</body>
+</html>
